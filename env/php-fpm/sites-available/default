@@ -1,0 +1,15 @@
+server {
+    listen 80;
+    server_name my-site.local;
+    root /var/www/html/tmy-site.local/html/public;
+
+    include /etc/nginx/snippets/laravel-common.conf;
+}
+
+server {
+    listen 80;
+    server_name localhost;
+    root /var/www/html/localhost/html/public;
+    
+    include /etc/nginx/snippets/laravel-common.conf;
+}

@@ -1,0 +1,75 @@
+services:
+    php:
+        build: ./env/php-fpm
+        depends_on:
+            - redis
+        ports:
+            - "80:80"
+            - "443:443"
+            - "8080:8080"
+        environment:
+            MYSQL_HOST: "127.0.0.1"
+            MYSQL_ROOT_USER: "root"
+            MYSQL_ROOT_PASSWORD: "pass"
+            MONGO_HOST: "mongo"
+            REDIS_HOST: "redis"
+            DEBUG: "true"
+
+        volumes:
+            - ./sites:/var/www/html
+            - ./env/php-fpm/sites-available:/etc/nginx/sites-available
+            - ./env/php-fpm/snippets:/etc/nginx/snippets
+            - ./env/php-fpm/supervisord.conf:/etc/supervisor/supervisord.conf
+    mysql:
+        platform: linux/x86_64
+        build: ./env/mysql
+        ports:
+            - "3306:3306"
+        environment:
+            MYSQL_ROOT_PASSWORD: pass
+        volumes:
+            - ./data/mysql:/var/lib/mysql
+    mongo:
+        build: ./env/mongodb
+        ports:
+            - "27017:27017"
+        volumes:
+            - ./data/mongo/db:/data/db
+    redis:
+        build: ./env/redis
+        ports:
+            - "127.0.0.1:6379:6379"
+        volumes:
+            - ./data/redis:/data
+    elasticsearch:
+        hostname: elasticsearch
+        build: ./env/elasticsearch
+        volumes:
+            - ./certs:/usr/share/elasticsearch/config/certs
+            - ./data/elasticsearch:/usr/share/elasticsearch/data
+        ports:
+            - 9200:9200
+        environment:
+            - node.name=es01
+            - cluster.name=docker-cluster
+            - cluster.initial_master_nodes=es01
+            - cluster.routing.allocation.disk.watermark.low=2gb
+            - cluster.routing.allocation.disk.watermark.high=1gb
+            - cluster.routing.allocation.disk.watermark.flood_stage=500mb
+            - cluster.info.update.interval=1m
+            - ELASTIC_PASSWORD=LOCALPASS
+            - bootstrap.memory_lock=true
+            - xpack.security.enabled=false
+            - xpack.license.self_generated.type=basic
+            - xpack.security.authc.api_key.enabled=true
+        mem_limit: 1073741824
+        ulimits:
+            memlock:
+                soft: -1
+                hard: -1
+    kibana:
+        build: ./env/kibana
+        environment:
+            - ./kibana/kibana.yml:/usr/share/kibana/config/kibana.yml
+        ports:
+            - "5601:5601"
